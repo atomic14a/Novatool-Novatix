@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PPT to PDF - NovaTool</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet">
+
+  <!-- Tabler Icons CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+
+  <!-- Core Stylesheet -->
+  <link rel="stylesheet" href="../style.css">
+
+  <!-- JSZip (CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <!-- PDF-Lib (CDN) -->
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+</head>
+<body>
+
+  <!-- Background glows -->
+  <div class="bg-glow-container">
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    <div class="bg-glow bg-glow-3"></div>
+  </div>
+
+  <!-- STICKY NAVIGATION BAR -->
+  <nav class="navbar glass-panel">
+    <div class="nav-container">
+      <a href="../index.html" class="logo" id="nav-logo-link">
+        <svg class="logo-svg" width="34" height="34" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#6366f1" />
+              <stop offset="50%" stop-color="#a855f7" />
+              <stop offset="100%" stop-color="#ec4899" />
+            </linearGradient>
+          </defs>
+          <path d="M8 12C8 9.79086 9.79086 8 12 8H24C26.2091 8 28 9.79086 28 12V24C28 26.2091 26.2091 28 24 28H12C9.79086 28 8 26.2091 8 24V12Z" stroke="url(#logo-grad)" stroke-width="2.5" stroke-linejoin="round" />
+          <path d="M18 10L20.5 15.5L26 18L20.5 20.5L18 26L15.5 20.5L10 18L15.5 15.5L18 10Z" fill="url(#logo-grad)" />
+          <circle cx="18" cy="18" r="2" fill="#ffffff" />
+        </svg>
+        <span>Nova<span class="logo-accent">Tool</span></span>
+      </a>
+      
+      <ul class="nav-links">
+        <li><a href="../index.html" class="nav-tab"><i class="ti ti-smart-home"></i> Home</a></li>
+        <li><a href="../pdf-merge/index.html" class="nav-tab"><i class="ti ti-arrows-join"></i> PDF Merge</a></li>
+        <li><a href="../image-to-pdf/index.html" class="nav-tab"><i class="ti ti-photo-plus"></i> Image to PDF</a></li>
+        <li><a href="../pdf-to-image/index.html" class="nav-tab"><i class="ti ti-photo-down"></i> PDF to Image</a></li>
+        <li><a href="../compress-files/index.html" class="nav-tab"><i class="ti ti-zip"></i> Compress Files</a></li>
+        <li><a href="../pdf-to-word/index.html" class="nav-tab"><i class="ti ti-file-text"></i> PDF to Word</a></li>
+        <li><a href="index.html" class="nav-tab active"><i class="ti ti-presentation"></i> PPT to PDF</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <button id="theme-toggle" class="theme-toggle-btn" title="Toggle Theme" aria-label="Toggle Theme">
+          <i class="ti ti-moon"></i>
+        </button>
+        <button id="mobile-menu-btn" class="mobile-menu-btn" title="Open Menu" aria-label="Open Menu">
+          <i class="ti ti-menu-2"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile Dropdown Navigation Menu -->
+  <div id="mobile-nav-menu" class="mobile-nav-menu glass-panel">
+    <a href="../index.html" class="mobile-nav-link"><i class="ti ti-smart-home"></i> Home</a>
+    <a href="../pdf-merge/index.html" class="mobile-nav-link"><i class="ti ti-arrows-join"></i> PDF Merge</a>
+    <a href="../image-to-pdf/index.html" class="mobile-nav-link"><i class="ti ti-photo-plus"></i> Image to PDF</a>
+    <a href="../pdf-to-image/index.html" class="mobile-nav-link"><i class="ti ti-photo-down"></i> PDF to Image</a>
+    <a href="../compress-files/index.html" class="mobile-nav-link"><i class="ti ti-zip"></i> Compress Files</a>
+    <a href="../pdf-to-word/index.html" class="mobile-nav-link"><i class="ti ti-file-text"></i> PDF to Word</a>
+    <a href="index.html" class="mobile-nav-link active"><i class="ti ti-presentation"></i> PPT to PDF</a>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div class="app-container">
+
+    <!-- VIEW 6: PPT TO PDF VIEW -->
+    <section id="ppt-view" class="view-section active-view">
+      <div class="tool-header">
+        <h2><i class="ti ti-presentation header-icon ppt-color"></i> PPT to PDF</h2>
+        <p>Convert your PowerPoint presentations (.pptx) into standard PDF slide pages locally in your browser.</p>
+      </div>
+
+      <div class="main-card glass-panel">
+        <div class="drop-zone" id="ppt-drop-zone">
+          <input type="file" id="ppt-file-input" multiple accept=".pptx" style="display: none;">
+          <div class="drop-zone-content">
+            <div class="icon-wrapper ppt-color-bg">
+              <i class="ti ti-presentation upload-icon"></i>
+            </div>
+            <h3>Drag &amp; drop your PowerPoint slides here</h3>
+            <p>or click to browse your local files</p>
+            <button type="button" class="btn btn-primary ppt-color-btn" onclick="document.getElementById('ppt-file-input').click();">
+              <i class="ti ti-file-search"></i> Select PPTX Files
+            </button>
+            <span class="file-limits">Supports PPTX format (Bulk upload and 1-button direct download)</span>
+          </div>
+        </div>
+
+        <!-- Workspace -->
+        <div id="ppt-workspace" style="display: none;" class="workspace-wrapper">
+          <div class="workspace-header">
+            <h3><i class="ti ti-list"></i> Presentations List</h3>
+            <button type="button" class="btn btn-text-danger" id="ppt-clear-btn">
+              <i class="ti ti-trash"></i> Clear All
+            </button>
+          </div>
+
+          <div class="list-wrapper">
+            <ul class="file-list list-no-hover" id="ppt-file-list"></ul>
+          </div>
+
+          <div class="settings-panel block-style">
+            <div class="settings-title"><i class="ti ti-adjustments"></i> Conversion Configurations</div>
+            <div class="settings-grid single-row">
+              <div class="stats-card borderless">
+                <div class="stat-item">
+                  <span class="stat-label">Presentations Selected</span>
+                  <span class="stat-value" id="ppt-stats-count">0</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat-item">
+                  <span class="stat-label">Total Size</span>
+                  <span class="stat-value" id="ppt-stats-size">0 KB</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="actions-wrapper">
+            <button type="button" class="btn btn-primary btn-large ppt-color-btn" id="ppt-execute-btn" disabled>
+              <i class="ti ti-file-type-pdf"></i> Convert PowerPoint to PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- Progress Overlay -->
+        <div id="ppt-progress" style="display: none;" class="progress-overlay-card">
+          <div class="progress-container">
+            <div class="loader-spinner ppt-color">
+              <i class="ti ti-loader animate-spin"></i>
+            </div>
+            <h3 id="ppt-progress-text">Rendering slides...</h3>
+            <div class="progress-bar-wrapper">
+              <div class="progress-bar ppt-color-bar" id="ppt-progress-bar" style="width: 0%"></div>
+            </div>
+            <span class="progress-percent" id="ppt-progress-percent">0%</span>
+          </div>
+        </div>
+
+        <!-- Success Screen -->
+        <div id="ppt-success" style="display: none;" class="success-overlay-card">
+          <div class="success-content">
+            <div class="success-icon-wrapper ppt-color-success">
+              <div class="success-circle"></div>
+              <i class="ti ti-circle-check success-icon"></i>
+            </div>
+            <h2>Conversion Complete!</h2>
+            <p>Your PowerPoint slide deck layout has been converted into standard PDF page dimensions.</p>
+            
+            <div class="download-details glass-panel">
+              <div class="details-row"><span>File Name:</span><span id="ppt-download-name" class="detail-value">presentation.pdf</span></div>
+              <div class="details-row"><span>Type:</span><span class="detail-value">PDF Document (.pdf) / ZIP Archive (.zip)</span></div>
+              <div class="details-row"><span>Compiled Size:</span><span id="ppt-download-size" class="detail-value">0 KB</span></div>
+            </div>
+
+            <div class="success-actions">
+              <button type="button" class="btn btn-success btn-large" id="ppt-download-btn">
+                <i class="ti ti-download"></i> Download Converted PDF
+              </button>
+              <button type="button" class="btn btn-secondary" id="ppt-reset-btn">
+                <i class="ti ti-refresh"></i> Convert More PPTX
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="app-footer glass-panel">
+    <div class="security-badge">
+      <i class="ti ti-shield-lock"></i>
+      <span>100% Client Side Processing. Your files never leave your device.</span>
+    </div>
+    <p class="copyright">Developed by Novatix Solution &bull; &copy; 2026 NovaTool. Local, private, secure.</p>
+  </footer>
+
+  <!-- Theme and mobile menu scripts -->
+  <script src="../theme.js"></script>
+  <!-- Isolated script logic -->
+  <script src="script.js"></script>
+</body>
+</html>

@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Compress Files - NovaTool</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet">
+
+  <!-- Tabler Icons CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+
+  <!-- Core Stylesheet -->
+  <link rel="stylesheet" href="../style.css">
+
+  <!-- PDF.js (CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <!-- JSZip (CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <!-- PDF-Lib (CDN) -->
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+</head>
+<body>
+
+  <!-- Background glows -->
+  <div class="bg-glow-container">
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    <div class="bg-glow bg-glow-3"></div>
+  </div>
+
+  <!-- STICKY NAVIGATION BAR -->
+  <nav class="navbar glass-panel">
+    <div class="nav-container">
+      <a href="../index.html" class="logo" id="nav-logo-link">
+        <svg class="logo-svg" width="34" height="34" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#6366f1" />
+              <stop offset="50%" stop-color="#a855f7" />
+              <stop offset="100%" stop-color="#ec4899" />
+            </linearGradient>
+          </defs>
+          <path d="M8 12C8 9.79086 9.79086 8 12 8H24C26.2091 8 28 9.79086 28 12V24C28 26.2091 26.2091 28 24 28H12C9.79086 28 8 26.2091 8 24V12Z" stroke="url(#logo-grad)" stroke-width="2.5" stroke-linejoin="round" />
+          <path d="M18 10L20.5 15.5L26 18L20.5 20.5L18 26L15.5 20.5L10 18L15.5 15.5L18 10Z" fill="url(#logo-grad)" />
+          <circle cx="18" cy="18" r="2" fill="#ffffff" />
+        </svg>
+        <span>Nova<span class="logo-accent">Tool</span></span>
+      </a>
+      
+      <ul class="nav-links">
+        <li><a href="../index.html" class="nav-tab"><i class="ti ti-smart-home"></i> Home</a></li>
+        <li><a href="../pdf-merge/index.html" class="nav-tab"><i class="ti ti-arrows-join"></i> PDF Merge</a></li>
+        <li><a href="../image-to-pdf/index.html" class="nav-tab"><i class="ti ti-photo-plus"></i> Image to PDF</a></li>
+        <li><a href="../pdf-to-image/index.html" class="nav-tab"><i class="ti ti-photo-down"></i> PDF to Image</a></li>
+        <li><a href="index.html" class="nav-tab active"><i class="ti ti-zip"></i> Compress Files</a></li>
+        <li><a href="../pdf-to-word/index.html" class="nav-tab"><i class="ti ti-file-text"></i> PDF to Word</a></li>
+        <li><a href="../ppt-to-pdf/index.html" class="nav-tab"><i class="ti ti-presentation"></i> PPT to PDF</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <button id="theme-toggle" class="theme-toggle-btn" title="Toggle Theme" aria-label="Toggle Theme">
+          <i class="ti ti-moon"></i>
+        </button>
+        <button id="mobile-menu-btn" class="mobile-menu-btn" title="Open Menu" aria-label="Open Menu">
+          <i class="ti ti-menu-2"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile Dropdown Navigation Menu -->
+  <div id="mobile-nav-menu" class="mobile-nav-menu glass-panel">
+    <a href="../index.html" class="mobile-nav-link"><i class="ti ti-smart-home"></i> Home</a>
+    <a href="../pdf-merge/index.html" class="mobile-nav-link"><i class="ti ti-arrows-join"></i> PDF Merge</a>
+    <a href="../image-to-pdf/index.html" class="mobile-nav-link"><i class="ti ti-photo-plus"></i> Image to PDF</a>
+    <a href="../pdf-to-image/index.html" class="mobile-nav-link"><i class="ti ti-photo-down"></i> PDF to Image</a>
+    <a href="index.html" class="mobile-nav-link active"><i class="ti ti-zip"></i> Compress Files</a>
+    <a href="../pdf-to-word/index.html" class="mobile-nav-link"><i class="ti ti-file-text"></i> PDF to Word</a>
+    <a href="../ppt-to-pdf/index.html" class="mobile-nav-link"><i class="ti ti-presentation"></i> PPT to PDF</a>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div class="app-container">
+
+    <!-- VIEW 4: FILE COMPRESSOR VIEW -->
+    <section id="compress-view" class="view-section active-view">
+      <div class="tool-header">
+        <h2><i class="ti ti-zip header-icon compress-color"></i> Compress Files</h2>
+        <p>Shrink PDFs, images, or DOCX documents to a target size while retaining maximum visual quality.</p>
+      </div>
+
+      <div class="main-card glass-panel">
+        <div class="drop-zone" id="compress-drop-zone">
+          <input type="file" id="compress-file-input" multiple accept=".pdf,image/*,.docx" style="display: none;">
+          <div class="drop-zone-content">
+            <div class="icon-wrapper compress-color-bg">
+              <i class="ti ti-archive-scale upload-icon"></i>
+            </div>
+            <h3>Drag &amp; drop your files here</h3>
+            <p>or click to browse your local directory</p>
+            <button type="button" class="btn btn-primary compress-color-btn" onclick="document.getElementById('compress-file-input').click();">
+              <i class="ti ti-file-import"></i> Browse Documents
+            </button>
+            <span class="file-limits">Supports PDF, PNG, JPEG, WEBP, DOCX (Word files containing images)</span>
+          </div>
+        </div>
+
+        <!-- Workspace -->
+        <div id="compress-workspace" style="display: none;" class="workspace-wrapper">
+          <div class="workspace-header">
+            <h3><i class="ti ti-list"></i> Selected Files</h3>
+            <button type="button" class="btn btn-text-danger" id="compress-clear-btn">
+              <i class="ti ti-trash"></i> Clear All
+            </button>
+          </div>
+
+          <div class="list-wrapper">
+            <ul class="file-list list-no-hover" id="compress-file-list"></ul>
+          </div>
+
+          <div class="settings-panel block-style">
+            <div class="settings-title"><i class="ti ti-adjustments-horizontal"></i> Compression Configurations</div>
+            
+            <div class="settings-grid">
+              <div class="form-group">
+                <label for="compress-mode">Optimization Mode</label>
+                <div class="select-wrapper">
+                  <select id="compress-mode">
+                    <option value="PERCENT" selected>By Percentage Ratio</option>
+                    <option value="SIZE">By Target Size Limit</option>
+                  </select>
+                  <i class="ti ti-chevron-down select-chevron"></i>
+                </div>
+              </div>
+
+              <!-- Slider Panel (Percent Mode) -->
+              <div class="form-group" id="compress-slider-container">
+                <label for="compress-percent-slider">Target Compression: <span class="badge" id="compress-slider-val">70%</span></label>
+                <div class="slider-wrapper">
+                  <input type="range" id="compress-percent-slider" min="10" max="95" value="70">
+                  <div class="range-labels">
+                    <span>Low Comp (Best Quality)</span>
+                    <span>High Comp (Small Size)</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Limit Target Size Panel (Size Mode) -->
+              <div class="form-group" id="compress-size-container" style="display: none;">
+                <label for="compress-size-limit">Target Size Limit</label>
+                <div class="select-wrapper">
+                  <select id="compress-size-limit">
+                    <option value="150000">150 KB (Extremely Compressed)</option>
+                    <option value="300000" selected>300 KB (Balanced Web)</option>
+                    <option value="500000">500 KB (Good for Printing)</option>
+                    <option value="1000000">1 MB (Minimal Compression)</option>
+                    <option value="CUSTOM">Custom Target Size</option>
+                  </select>
+                  <i class="ti ti-chevron-down select-chevron"></i>
+                </div>
+              </div>
+
+              <div class="form-group" id="compress-custom-size-container" style="display: none;">
+                <label for="compress-custom-size">Custom Limit (KB)</label>
+                <div class="input-group">
+                  <i class="ti ti-archive input-icon"></i>
+                  <input type="number" id="compress-custom-size" value="250" min="20" max="50000">
+                </div>
+              </div>
+
+              <!-- PDF Specific Configurations -->
+              <div class="form-group">
+                <label for="compress-pdf-mode">PDF Compress Strategy</label>
+                <div class="select-wrapper">
+                  <select id="compress-pdf-mode">
+                    <option value="METADATA">Lossless (Strip Metadata only)</option>
+                    <option value="LOSSY" selected>Lossy (Canvas Page Re-compress)</option>
+                  </select>
+                  <i class="ti ti-chevron-down select-chevron"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stats-card wide-layout">
+            <div class="stat-item">
+              <span class="stat-label">Files Selected</span>
+              <span class="stat-value" id="compress-stats-count">0</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-label">Original Size</span>
+              <span class="stat-value" id="compress-stats-size">0 KB</span>
+            </div>
+          </div>
+
+          <div class="actions-wrapper">
+            <button type="button" class="btn btn-primary btn-large compress-color-btn" id="compress-execute-btn">
+              <i class="ti ti-zip"></i> Compress Selected Files
+            </button>
+          </div>
+        </div>
+
+        <!-- Progress Overlay -->
+        <div id="compress-progress" style="display: none;" class="progress-overlay-card">
+          <div class="progress-container">
+            <div class="loader-spinner compress-color">
+              <i class="ti ti-loader animate-spin"></i>
+            </div>
+            <h3 id="compress-progress-text">Reducing file sizes...</h3>
+            <div class="progress-bar-wrapper">
+              <div class="progress-bar compress-color-bar" id="compress-progress-bar" style="width: 0%"></div>
+            </div>
+            <span class="progress-percent" id="compress-progress-percent">0%</span>
+          </div>
+        </div>
+
+        <!-- Success Screen -->
+        <div id="compress-success" style="display: none;" class="success-overlay-card">
+          <div class="success-content">
+            <div class="success-icon-wrapper compress-color-success">
+              <div class="success-circle"></div>
+              <i class="ti ti-circle-check success-icon"></i>
+            </div>
+            <h2>Compression Complete!</h2>
+            <p>Your files have been successfully compressed. Check metrics below.</p>
+            
+            <div class="download-details glass-panel">
+              <div class="details-header"><i class="ti ti-chart-bar"></i> Savings Breakdown</div>
+              <ul class="compress-result-list" id="compress-result-list"></ul>
+            </div>
+
+            <div class="success-actions">
+              <button type="button" class="btn btn-success btn-large" id="compress-download-btn">
+                <i class="ti ti-download"></i> Download Compressed files
+              </button>
+              <button type="button" class="btn btn-secondary" id="compress-reset-btn">
+                <i class="ti ti-refresh"></i> Compress More Files
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="app-footer glass-panel">
+    <div class="security-badge">
+      <i class="ti ti-shield-lock"></i>
+      <span>100% Client Side Processing. Your files never leave your device.</span>
+    </div>
+    <p class="copyright">Developed by Novatix Solution &bull; &copy; 2026 NovaTool. Local, private, secure.</p>
+  </footer>
+
+  <!-- Theme and mobile menu scripts -->
+  <script src="../theme.js"></script>
+  <!-- Isolated script logic -->
+  <script src="script.js"></script>
+</body>
+</html>
