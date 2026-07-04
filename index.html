@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NovaTool - Secure In-Browser PDF & Document Tools</title>
+  
+  <!-- SEO Meta Tags -->
+  <meta name="description" content="All-in-one PDF and document tools operating entirely in your browser. Merge PDFs, convert images to PDF, render PDF to images, and compress files locally. No data leaves your device.">
+  <meta name="keywords" content="pdf merge, image to pdf, pdf to image, compress pdf, local pdf compressor, secure document tool, docx compress">
+  <meta name="author" content="NovaTool">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Tabler Icons CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+
+  <!-- Core Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- JSZip (CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+  <!-- PDF.js (CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <!-- PDF-Lib (CDN) -->
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+
+  <!-- SortableJS (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+</head>
+<body>
+
+  <!-- Decorative floating background blur spots contained to prevent scroll expansion -->
+  <div class="bg-glow-container">
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    <div class="bg-glow bg-glow-3"></div>
+  </div>
+
+  <!-- STICKY NAVIGATION BAR -->
+  <nav class="navbar glass-panel">
+    <div class="nav-container">
+      <a href="#" class="logo" id="nav-logo-link">
+        <svg class="logo-svg" width="34" height="34" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#6366f1" />
+              <stop offset="50%" stop-color="#a855f7" />
+              <stop offset="100%" stop-color="#ec4899" />
+            </linearGradient>
+          </defs>
+          <path d="M8 12C8 9.79086 9.79086 8 12 8H24C26.2091 8 28 9.79086 28 12V24C28 26.2091 26.2091 28 24 28H12C9.79086 28 8 26.2091 8 24V12Z" stroke="url(#logo-grad)" stroke-width="2.5" stroke-linejoin="round" />
+          <path d="M18 10L20.5 15.5L26 18L20.5 20.5L18 26L15.5 20.5L10 18L15.5 15.5L18 10Z" fill="url(#logo-grad)" />
+          <circle cx="18" cy="18" r="2" fill="#ffffff" />
+        </svg>
+        <span>Nova<span class="logo-accent">Tool</span></span>
+      </a>
+      
+      <ul class="nav-links">
+        <li><a href="#" class="nav-tab active" data-target="home-view"><i class="ti ti-smart-home"></i> Home</a></li>
+        <li><a href="#" class="nav-tab" data-target="merge-view"><i class="ti ti-arrows-join"></i> PDF Merge</a></li>
+        <li><a href="#" class="nav-tab" data-target="image-to-pdf-view"><i class="ti ti-photo-plus"></i> Image to PDF</a></li>
+        <li><a href="#" class="nav-tab" data-target="pdf-to-image-view"><i class="ti ti-photo-down"></i> PDF to Image</a></li>
+        <li><a href="#" class="nav-tab" data-target="compress-view"><i class="ti ti-zip"></i> Compress Files</a></li>
+        <li><a href="#" class="nav-tab" data-target="pdf-to-word-view"><i class="ti ti-file-text"></i> PDF to Word</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <button id="theme-toggle" class="theme-toggle-btn" title="Toggle Theme" aria-label="Toggle Theme">
+          <i class="ti ti-moon"></i>
+        </button>
+        <button id="mobile-menu-btn" class="mobile-menu-btn" title="Open Menu" aria-label="Open Menu">
+          <i class="ti ti-menu-2"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile Dropdown Navigation Menu -->
+  <div id="mobile-nav-menu" class="mobile-nav-menu glass-panel">
+    <a href="#" class="mobile-nav-link active" data-target="home-view"><i class="ti ti-smart-home"></i> Home</a>
+    <a href="#" class="mobile-nav-link" data-target="merge-view"><i class="ti ti-arrows-join"></i> PDF Merge</a>
+    <a href="#" class="mobile-nav-link" data-target="image-to-pdf-view"><i class="ti ti-photo-plus"></i> Image to PDF</a>
+    <a href="#" class="mobile-nav-link" data-target="pdf-to-image-view"><i class="ti ti-photo-down"></i> PDF to Image</a>
+    <a href="#" class="mobile-nav-link" data-target="compress-view"><i class="ti ti-zip"></i> Compress Files</a>
+    <a href="#" class="mobile-nav-link" data-target="pdf-to-word-view"><i class="ti ti-file-text"></i> PDF to Word</a>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div class="app-container">
+
+    <!-- ==========================================
+         VIEW 0: HOME / DASHBOARD
+         ========================================== -->
+    <section id="home-view" class="view-section active-view">
+      <div class="hero-section">
+        <h1>Simplify Your Document Workflows</h1>
+        <p class="hero-subtitle">Premium PDF and image compression tools running 100% locally in your browser. Fast, private, and secure.</p>
+        <div class="hero-actions">
+          <button class="btn btn-primary btn-hero-explore" id="hero-get-started-btn">
+            <i class="ti ti-arrow-right"></i> Get Started
+          </button>
+        </div>
+      </div>
+
+      <div class="tools-grid">
+        <!-- Card 1: PDF Merge -->
+        <div class="tool-card glass-panel merge-hover" onclick="switchTab('merge-view')">
+          <div class="tool-card-icon-wrapper merge-color">
+            <i class="ti ti-arrows-join"></i>
+          </div>
+          <h3>PDF Merge</h3>
+          <p>Combine multiple PDF documents into a single consolidated file in your chosen order.</p>
+          <span class="tool-card-btn">Open Tool <i class="ti ti-chevron-right"></i></span>
+        </div>
+
+        <!-- Card 2: Image to PDF -->
+        <div class="tool-card glass-panel img2pdf-hover" onclick="switchTab('image-to-pdf-view')">
+          <div class="tool-card-icon-wrapper img-to-pdf-color">
+            <i class="ti ti-photo-plus"></i>
+          </div>
+          <h3>Image to PDF</h3>
+          <p>Convert JPG, PNG, WEBP, BMP, or GIF images into custom, styled PDF documents.</p>
+          <span class="tool-card-btn">Open Tool <i class="ti ti-chevron-right"></i></span>
+        </div>
+
+        <!-- Card 3: PDF to Image -->
+        <div class="tool-card glass-panel pdf2img-hover" onclick="switchTab('pdf-to-image-view')">
+          <div class="tool-card-icon-wrapper pdf-to-img-color">
+            <i class="ti ti-photo-down"></i>
+          </div>
+          <h3>PDF to Image</h3>
+          <p>Extract all pages of a PDF document and save them as individual PNG, JPG, or WEBP images.</p>
+          <span class="tool-card-btn">Open Tool <i class="ti ti-chevron-right"></i></span>
+        </div>
+
+        <!-- Card 4: File Compressor -->
+        <div class="tool-card glass-panel compress-hover" onclick="switchTab('compress-view')">
+          <div class="tool-card-icon-wrapper compress-color">
+            <i class="ti ti-zip"></i>
+          </div>
+          <h3>Compress Files</h3>
+          <p>Shrink PDFs, images, or DOCX documents to a target size while retaining visual quality.</p>
+          <span class="tool-card-btn">Open Tool <i class="ti ti-chevron-right"></i></span>
+        </div>
+
+        <!-- Card 5: PDF to Word -->
+        <div class="tool-card glass-panel word-hover" onclick="switchTab('pdf-to-word-view')">
+          <div class="tool-card-icon-wrapper word-color">
+            <i class="ti ti-file-text"></i>
+          </div>
+          <h3>PDF to Word</h3>
+          <p>Extract text formatting and paragraphs from PDF pages and save them as editable DOC files.</p>
+          <span class="tool-card-btn">Open Tool <i class="ti ti-chevron-right"></i></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         VIEW 1: PDF MERGE VIEW
+         ========================================== -->
+    <section id="merge-view" class="view-section">
+      <div class="tool-header">
+        <h2><i class="ti ti-arrows-join header-icon merge-color"></i> PDF Merge</h2>
+        <p>Combine multiple PDF files into one. Drag and drop to sort them as you wish.</p>
+      </div>
+
+      <div class="main-card glass-panel">
+        <div class="drop-zone" id="merge-drop-zone">
+          <input type="file" id="merge-file-input" multiple accept=".pdf" style="display: none;">
+          <div class="drop-zone-content">
+            <div class="icon-wrapper merge-color-bg">
+              <i class="ti ti-cloud-upload upload-icon"></i>
+            </div>
+            <h3>Drag & drop your PDFs here</h3>
+            <p>or click to browse your local files</p>
+            <button type="button" class="btn btn-primary merge-color-btn" onclick="document.getElementById('merge-file-input').click();">
+              <i class="ti ti-file-search"></i> Browse Files
+            </button>
+            <span class="file-limits">Supports multiple PDFs (2 to 100+ files)</span>
+          </div>
+        </div>
+
+        <!-- Workspace (Visible when files added) -->
+        <div id="merge-workspace" style="display: none;" class="workspace-wrapper">
+          <div class="workspace-header">
+            <h3><i class="ti ti-list-numbers"></i> Files to Merge</h3>
+            <button type="button" class="btn btn-text-danger" id="merge-clear-btn">
+              <i class="ti ti-trash"></i> Clear All
+            </button>
+          </div>
+
+          <div class="list-wrapper">
+            <ul class="file-list" id="merge-file-list"></ul>
+          </div>
+
+          <div class="settings-panel">
+            <div class="filename-config">
+              <label for="merge-output-filename">Output Filename</label>
+              <div class="input-group">
+                <i class="ti ti-edit input-icon"></i>
+                <input type="text" id="merge-output-filename" value="merged-document">
+                <span class="input-suffix">.pdf</span>
+              </div>
+            </div>
+
+            <div class="stats-card">
+              <div class="stat-item">
+                <span class="stat-label">Files</span>
+                <span class="stat-value" id="merge-stats-count">0</span>
+              </div>
+              <div class="stat-divider"></div>
+              <div class="stat-item">
+                <span class="stat-label">Total Size</span>
+                <span class="stat-value" id="merge-stats-size">0 KB</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="validation-alert" id="merge-validation-alert" style="display: none;">
+            <i class="ti ti-alert-triangle alert-icon"></i>
+            <span class="alert-text">Configure valid reorder entries.</span>
+          </div>
+
+          <div class="actions-wrapper">
+            <button type="button" class="btn btn-primary btn-large merge-color-btn" id="merge-execute-btn" disabled>
+              <i class="ti ti-arrows-join"></i> Merge PDFs
+            </button>
+          </div>
+        </div>
+
+        <!-- Progress Overlay -->
+        <div id="merge-progress" style="display: none;" class="progress-overlay-card">
+          <div class="progress-container">
+            <div class="loader-spinner merge-color">
+              <i class="ti ti-loader animate-spin"></i>
+            </div>
+            <h3 id="merge-progress-text">Preparing...</h3>
+            <div class="progress-bar-wrapper">
+              <div class="progress-bar merge-color-bar" id="merge-progress-bar" style="width: 0%"></div>
+            </div>
+            <span class="progress-percent" id="merge-progress-percent">0%</span>
+          </div>
+        </div>
+
+        <!-- Success Screen -->
+        <div id="merge-success" style="display: none;" class="success-overlay-card">
+          <div class="success-content">
+            <div class="success-icon-wrapper merge-color-success">
+              <div class="success-circle"></div>
+              <i class="ti ti-circle-check success-icon"></i>
+            </div>
+            <h2>Merge Successful!</h2>
+            <p>Your combined PDF document has been compiled completely inside your browser.</p>
+            
+            <div class="download-details glass-panel">
+              <div class="details-row"><span>File Name:</span><span id="merge-download-name" class="detail-value">merged.pdf</span></div>
+              <div class="details-row"><span>Total Pages:</span><span id="merge-download-pages" class="detail-value">0</span></div>
+              <div class="details-row"><span>Output Size:</span><span id="merge-download-size" class="detail-value">0 KB</span></div>
+            </div>
+
+            <div class="success-actions">
+              <button type="button" class="btn btn-success btn-large" id="merge-download-btn">
+                <i class="ti ti-download"></i> Download PDF
+              </button>
+              <button type="button" class="btn btn-secondary" id="merge-reset-btn">
+                <i class="ti ti-refresh"></i> Merge More Files
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         VIEW 2: IMAGE TO PDF VIEW
+         ========================================== -->
+    <section id="image-to-pdf-view" class="view-section">
+      <div class="tool-header">
+        <h2><i class="ti ti-photo-plus header-icon img-to-pdf-color"></i> Image to PDF</h2>
+        <p>Convert your photos and images to a print-ready PDF document. Style orientation, margins, and paper sizes.</p>
+      </div>
+
+      <div class="main-card glass-panel">
+        <div class="drop-zone" id="img2pdf-drop-zone">
+          <input type="file" id="img2pdf-file-input" multiple accept="image/png, image/jpeg, image/jpg, image/webp, image/bmp, image/gif" style="display: none;">
+          <div class="drop-zone-content">
+            <div class="icon-wrapper img-to-pdf-color-bg">
+              <i class="ti ti-cloud-upload upload-icon"></i>
+            </div>
+            <h3>Drag & drop your images here</h3>
+            <p>Supports PNG, JPG, JPEG, WEBP, BMP, and GIF files</p>
+            <button type="button" class="btn btn-primary img-to-pdf-color-btn" onclick="document.getElementById('img2pdf-file-input').click();">
+              <i class="ti ti-file-search"></i> Browse Images
+            </button>
+            <span class="file-limits">Bulk upload support (1 to 100+ files)</span>
+          </div>
+        </div>
+
+        <!-- Workspace -->
+        <div id="img2pdf-workspace" style="display: none;" class="workspace-wrapper">
+          <div class="workspace-header">
+            <h3><i class="ti ti-photo"></i> Uploaded Images</h3>
+            <button type="button" class="btn btn-text-danger" id="img2pdf-clear-btn">
+              <i class="ti ti-trash"></i> Clear All
+            </button>
+          </div>
+
+          <div class="list-wrapper">
+            <ul class="file-list" id="img2pdf-file-list"></ul>
+          </div>
+
+          <!-- Configuration Settings Card Grid -->
+          <div class="settings-grid">
+            <!-- Parameter: Page size -->
+            <div class="setting-item glass-panel">
+              <label><i class="ti ti-viewport-narrow"></i> Page Size</label>
+              <div class="custom-select-wrapper">
+                <select id="img2pdf-page-size">
+                  <option value="A4" selected>A4 (210 x 297mm)</option>
+                  <option value="LETTER">Letter (8.5 x 11in)</option>
+                  <option value="LEGAL">Legal (8.5 x 14in)</option>
+                  <option value="FIT">Fit Image (Auto size)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Parameter: Orientation -->
+            <div class="setting-item glass-panel">
+              <label><i class="ti ti-page-break"></i> Orientation</label>
+              <div class="custom-select-wrapper">
+                <select id="img2pdf-orientation">
+                  <option value="PORTRAIT" selected>Portrait</option>
+                  <option value="LANDSCAPE">Landscape</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Parameter: Margins -->
+            <div class="setting-item glass-panel">
+              <label><i class="ti ti-border-outer"></i> Margins</label>
+              <div class="custom-select-wrapper">
+                <select id="img2pdf-margins">
+                  <option value="NONE" selected>None (0px)</option>
+                  <option value="SMALL">Small (10px)</option>
+                  <option value="MEDIUM">Medium (25px)</option>
+                  <option value="LARGE">Large (50px)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Parameter: Quality -->
+            <div class="setting-item glass-panel">
+              <label><i class="ti ti-photo-sensor"></i> Image Quality</label>
+              <div class="custom-select-wrapper">
+                <select id="img2pdf-quality">
+                  <option value="1.0">100% (Lossless JPEG)</option>
+                  <option value="0.95">95% (High Quality)</option>
+                  <option value="0.9" selected>90% (Optimized)</option>
+                  <option value="0.8">80% (Medium Compression)</option>
+                  <option value="0.7">70% (High Compression)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Parameter: Max File Size Limit -->
+            <div class="setting-item glass-panel">
+              <label><i class="ti ti-scale-outline"></i> Max Output Size</label>
+              <div class="custom-select-wrapper">
+                <select id="img2pdf-max-size">
+                  <option value="NONE" selected>No limit (Original Quality)</option>
+                  <option value="500000">500 KB</option>
+                  <option value="1000000">1 MB</option>
+                  <option value="2000000">2 MB</option>
+                  <option value="5000000">5 MB</option>
+                  <option value="10000000">10 MB</option>
+                  <option value="CUSTOM">Custom Size...</option>
+                </select>
+              </div>
+              <div id="img2pdf-custom-size-container" style="display: none;" class="custom-input-inline">
+                <input type="number" id="img2pdf-custom-size-val" placeholder="Size" min="100">
+                <select id="img2pdf-custom-size-unit">
+                  <option value="KB" selected>KB</option>
+                  <option value="MB">MB</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Parameter: Output Filename -->
+            <div class="setting-item glass-panel">
+              <label><i class="ti ti-edit"></i> Output Filename</label>
+              <div class="input-group">
+                <input type="text" id="img2pdf-output-filename" value="converted-images">
+                <span class="input-suffix">.pdf</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Statistics Panel -->
+          <div class="stats-card stats-full-width">
+            <div class="stat-item">
+              <span class="stat-label">Images Count</span>
+              <span class="stat-value" id="img2pdf-stats-count">0</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-label">Original Size</span>
+              <span class="stat-value" id="img2pdf-stats-size">0 KB</span>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-item">
+              <span class="stat-label">Estimated PDF Size</span>
+              <span class="stat-value" id="img2pdf-stats-est">0 KB</span>
+            </div>
+          </div>
+
+          <div class="actions-wrapper">
+            <button type="button" class="btn btn-accent btn-large img-to-pdf-color-btn" id="img2pdf-execute-btn">
+              <i class="ti ti-file-export"></i> Convert Images to PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- Progress Overlay -->
+        <div id="img2pdf-progress" style="display: none;" class="progress-overlay-card">
+          <div class="progress-container">
+            <div class="loader-spinner img-to-pdf-color">
+              <i class="ti ti-loader animate-spin"></i>
+            </div>
+            <h3 id="img2pdf-progress-text">Preparing Images...</h3>
+            <div class="progress-bar-wrapper">
+              <div class="progress-bar img-to-pdf-color-bar" id="img2pdf-progress-bar" style="width: 0%"></div>
+            </div>
+            <span class="progress-percent" id="img2pdf-progress-percent">0%</span>
+          </div>
+        </div>
+
+        <!-- Success Screen -->
+        <div id="img2pdf-success" style="display: none;" class="success-overlay-card">
+          <div class="success-content">
+            <div class="success-icon-wrapper img-to-pdf-color-success">
+              <div class="success-circle"></div>
+              <i class="ti ti-circle-check success-icon"></i>
+            </div>
+            <h2>PDF Conversion Completed!</h2>
+            <p>Your images have been optimized and merged into a standalone PDF.</p>
+            
+            <div class="download-details glass-panel">
+              <div class="details-row"><span>File Name:</span><span id="img2pdf-download-name" class="detail-value">converted.pdf</span></div>
+              <div class="details-row"><span>Total Pages:</span><span id="img2pdf-download-pages" class="detail-value">0</span></div>
+              <div class="details-row"><span>Final PDF Size:</span><span id="img2pdf-download-size" class="detail-value">0 KB</span></div>
+            </div>
+
+            <div class="success-actions">
+              <button type="button" class="btn btn-success btn-large" id="img2pdf-download-btn">
+                <i class="ti ti-download"></i> Download PDF
+              </button>
+              <button type="button" class="btn btn-secondary" id="img2pdf-reset-btn">
+                <i class="ti ti-refresh"></i> Convert More Images
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         VIEW 3: PDF TO IMAGE VIEW
+         ========================================== -->
+    <section id="pdf-to-image-view" class="view-section">
+      <div class="tool-header">
+        <h2><i class="ti ti-photo-down header-icon pdf-to-img-color"></i> PDF to Image</h2>
+        <p>Extract and render PDF document pages into high-resolution standalone images. Supports single or bulk PDF conversions.</p>
+      </div>
+
+      <div class="main-card glass-panel">
+        <div class="drop-zone" id="pdf2img-drop-zone">
+          <input type="file" id="pdf2img-file-input" multiple accept=".pdf" style="display: none;">
+          <div class="drop-zone-content">
+            <div class="icon-wrapper pdf-to-img-color-bg">
+              <i class="ti ti-cloud-upload upload-icon"></i>
+            </div>
+            <h3>Drag & drop your PDFs here</h3>
+            <p>or click to browse your local documents</p>
+            <button type="button" class="btn btn-primary pdf-to-img-color-btn" onclick="document.getElementById('pdf2img-file-input').click();">
+              <i class="ti ti-file-search"></i> Browse PDFs
+            </button>
+            <span class="file-limits">Supports multiple document pages extraction</span>
+          </div>
+        </div>
+
+        <!-- Workspace -->
+        <div id="pdf2img-workspace" style="display: none;" class="workspace-wrapper">
+          <div class="workspace-header">
+            <h3><i class="ti ti-file-text"></i> PDF Files to Extract</h3>
+            <button type="button" class="btn btn-text-danger" id="pdf2img-clear-btn">
+              <i class="ti ti-trash"></i> Clear All
+            </button>
+          </div>
+
+          <div class="list-wrapper">
+            <ul class="file-list" id="pdf2img-file-list"></ul>
+          </div>
+
+          <div class="settings-grid">
+            <!-- Format Choice -->
+            <div class="setting-item glass-panel">
+              <label><i class="ti ti-file-type-jpg"></i> Target Format</label>
+              <div class="custom-select-wrapper">
+                <select id="pdf2img-format">
+                  <option value="PNG" selected>PNG (Lossless)</option>
+                  <option value="JPEG">JPEG (Compressed)</option>
+                  <option value="WEBP">WEBP (Modern Web)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Resolution choice -->
+            <div class="setting-item glass-panel">
+              <label><i class="ti ti-aspect-ratio"></i> Resolution (DPI)</label>
+              <div class="custom-select-wrapper">
+                <select id="pdf2img-dpi">
+                  <option value="150" selected>150 DPI (Standard)</option>
+                  <option value="200">200 DPI (Medium)</option>
+                  <option value="300">300 DPI (High Res)</option>
+                  <option value="600">600 DPI (Super High Res - Slow)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Quality Choice -->
+            <div class="setting-item glass-panel">
+              <label><i class="ti ti-award"></i> Quality</label>
+              <div class="custom-select-wrapper">
+                <select id="pdf2img-quality">
+                  <option value="1.0" selected>100% (Max Sharpness)</option>
+                  <option value="0.95">95% (High Quality)</option>
+                  <option value="0.9">90% (Optimized)</option>
+                  <option value="0.8">80% (Medium Size)</option>
+                  <option value="0.7">70% (Compact Size)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Max Image size -->
+            <div class="setting-item glass-panel">
+              <label><i class="ti ti-scale-outline"></i> Max Image Size</label>
+              <div class="custom-select-wrapper">
+                <select id="pdf2img-max-size">
+                  <option value="NONE" selected>No Limit</option>
+                  <option value="500000">500 KB</option>
+                  <option value="1000000">1 MB</option>
+                  <option value="2000000">2 MB</option>
+                  <option value="5000000">5 MB</option>
+                  <option value="CUSTOM">Custom Size...</option>
+                </select>
+              </div>
+              <div id="pdf2img-custom-size-container" style="display: none;" class="custom-input-inline">
+                <input type="number" id="pdf2img-custom-size-val" placeholder="Size" min="100">
+                <select id="pdf2img-custom-size-unit">
+                  <option value="KB" selected>KB</option>
+                  <option value="MB">MB</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="actions-wrapper">
+            <button type="button" class="btn btn-primary btn-large pdf-to-img-color-btn" id="pdf2img-execute-btn">
+              <i class="ti ti-photo-down"></i> Convert PDF to Images
+            </button>
+          </div>
+        </div>
+
+        <!-- Progress Overlay -->
+        <div id="pdf2img-progress" style="display: none;" class="progress-overlay-card">
+          <div class="progress-container">
+            <div class="loader-spinner pdf-to-img-color">
+              <i class="ti ti-loader animate-spin"></i>
+            </div>
+            <h3 id="pdf2img-progress-text">Reading PDF...</h3>
+            <div class="progress-bar-wrapper">
+              <div class="progress-bar pdf-to-img-color-bar" id="pdf2img-progress-bar" style="width: 0%"></div>
+            </div>
+            <span class="progress-percent" id="pdf2img-progress-percent">0%</span>
+          </div>
+        </div>
+
+        <!-- Success Screen -->
+        <div id="pdf2img-success" style="display: none;" class="success-overlay-card">
+          <div class="success-content success-content-scrollable">
+            <div class="success-icon-wrapper pdf-to-img-color-success">
+              <div class="success-circle"></div>
+              <i class="ti ti-circle-check success-icon"></i>
+            </div>
+            <h2>Extraction Complete!</h2>
+            <p>All pages from your PDF documents have been rendered into compressed images.</p>
+
+            <div class="stats-card stats-full-width">
+              <div class="stat-item">
+                <span class="stat-label">Pages Extracted</span>
+                <span class="stat-value" id="pdf2img-success-pages">0</span>
+              </div>
+              <div class="stat-divider"></div>
+              <div class="stat-item">
+                <span class="stat-label">Format</span>
+                <span class="stat-value" id="pdf2img-success-format">PNG</span>
+              </div>
+              <div class="stat-divider"></div>
+              <div class="stat-item">
+                <span class="stat-label">Total Size</span>
+                <span class="stat-value" id="pdf2img-success-size">0 KB</span>
+              </div>
+            </div>
+
+            <!-- Page Previews Gallery -->
+            <div class="gallery-container">
+              <h3>Rendered Pages Gallery</h3>
+              <div class="image-gallery-grid" id="pdf2img-gallery">
+                <!-- Dynamically filled thumbnails -->
+              </div>
+            </div>
+
+            <div class="success-actions">
+              <button type="button" class="btn btn-success btn-large" id="pdf2img-download-btn">
+                <i class="ti ti-file-zip"></i> Download Images ZIP
+              </button>
+              <button type="button" class="btn btn-secondary" id="pdf2img-reset-btn">
+                <i class="ti ti-refresh"></i> Convert More PDFs
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         VIEW 4: FILE COMPRESSOR VIEW
+         ========================================== -->
+    <section id="compress-view" class="view-section">
+      <div class="tool-header">
+        <h2><i class="ti ti-zip header-icon compress-color"></i> Compress Files</h2>
+        <p>Reduce uploader file sizes for PDF, images, or Microsoft Word documents while preserving maximum visual clarity.</p>
+      </div>
+
+      <div class="main-card glass-panel">
+        <div class="drop-zone" id="compress-drop-zone">
+          <input type="file" id="compress-file-input" multiple accept=".pdf, image/png, image/jpeg, image/jpg, image/webp, .doc, .docx" style="display: none;">
+          <div class="drop-zone-content">
+            <div class="icon-wrapper compress-color-bg">
+              <i class="ti ti-cloud-upload upload-icon"></i>
+            </div>
+            <h3>Drag & drop files here</h3>
+            <p>Supports PDF, PNG, JPG, JPEG, WEBP, DOC, and DOCX documents</p>
+            <button type="button" class="btn btn-primary compress-color-btn" onclick="document.getElementById('compress-file-input').click();">
+              <i class="ti ti-file-search"></i> Browse Files
+            </button>
+            <span class="file-limits">Local batch compression</span>
+          </div>
+        </div>
+
+        <!-- Workspace -->
+        <div id="compress-workspace" style="display: none;" class="workspace-wrapper">
+          <div class="workspace-header">
+            <h3><i class="ti ti-files"></i> Files to Compress</h3>
+            <button type="button" class="btn btn-text-danger" id="compress-clear-btn">
+              <i class="ti ti-trash"></i> Clear All
+            </button>
+          </div>
+
+          <div class="list-wrapper">
+            <ul class="file-list" id="compress-file-list"></ul>
+          </div>
+
+          <div class="settings-grid settings-compress-grid">
+            <!-- Compression Mode selection -->
+            <div class="setting-item glass-panel select-row-span">
+              <label><i class="ti ti-adjustments-horizontal"></i> Optimization Goal</label>
+              <div class="toggle-mode-wrapper">
+                <button type="button" class="toggle-btn active" id="compress-toggle-size-btn">Target Size</button>
+                <button type="button" class="toggle-btn" id="compress-toggle-percent-btn">Compression %</button>
+              </div>
+            </div>
+
+            <!-- Target Size controls -->
+            <div class="setting-item glass-panel" id="compress-size-settings">
+              <label><i class="ti ti-scale-outline"></i> Target File Size</label>
+              <div class="custom-select-wrapper">
+                <select id="compress-target-size">
+                  <option value="100000">100 KB</option>
+                  <option value="250000" selected>250 KB</option>
+                  <option value="500000">500 KB</option>
+                  <option value="1000000">1 MB</option>
+                  <option value="2000000">2 MB</option>
+                  <option value="CUSTOM">Custom size...</option>
+                </select>
+              </div>
+              <div id="compress-custom-size-container" style="display: none;" class="custom-input-inline">
+                <input type="number" id="compress-custom-size-val" placeholder="Size" value="250">
+                <select id="compress-custom-size-unit">
+                  <option value="KB" selected>KB</option>
+                  <option value="MB">MB</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Compression Percentage slider -->
+            <div class="setting-item glass-panel" id="compress-percent-settings" style="display: none;">
+              <label><i class="ti ti-circle-half"></i> Compression Percentage</label>
+              <div class="slider-wrapper">
+                <input type="range" id="compress-percent-slider" min="10" max="90" step="10" value="40">
+                <span class="slider-val" id="compress-slider-val">40%</span>
+              </div>
+            </div>
+
+            <div class="setting-item glass-panel">
+              <label><i class="ti ti-sparkles"></i> PDF Compression Mode</label>
+              <div class="custom-select-wrapper">
+                <select id="compress-pdf-mode">
+                  <option value="LOSSY" selected>Visual Re-Compress (High Savings)</option>
+                  <option value="LOSSLESS">Optimize Metadata (Perfect Quality)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="actions-wrapper">
+            <button type="button" class="btn btn-primary btn-large compress-color-btn" id="compress-execute-btn">
+              <i class="ti ti-zip"></i> Compress Files
+            </button>
+          </div>
+        </div>
+
+        <!-- Progress Overlay -->
+        <div id="compress-progress" style="display: none;" class="progress-overlay-card">
+          <div class="progress-container">
+            <div class="loader-spinner compress-color">
+              <i class="ti ti-loader animate-spin"></i>
+            </div>
+            <h3 id="compress-progress-text">Scanning Files...</h3>
+            <div class="progress-bar-wrapper">
+              <div class="progress-bar compress-color-bar" id="compress-progress-bar" style="width: 0%"></div>
+            </div>
+            <span class="progress-percent" id="compress-progress-percent">0%</span>
+          </div>
+        </div>
+
+        <!-- Success Screen -->
+        <div id="compress-success" style="display: none;" class="success-overlay-card">
+          <div class="success-content success-content-scrollable">
+            <div class="success-icon-wrapper compress-color-success">
+              <div class="success-circle"></div>
+              <i class="ti ti-circle-check success-icon"></i>
+            </div>
+            <h2>Compression Complete!</h2>
+            <p>Your documents have been optimized while preserving maximum visual clarity.</p>
+
+            <div class="stats-card stats-full-width">
+              <div class="stat-item">
+                <span class="stat-label">Original Size</span>
+                <span class="stat-value" id="compress-success-orig">0 KB</span>
+              </div>
+              <div class="stat-divider"></div>
+              <div class="stat-item">
+                <span class="stat-label">Compressed Size</span>
+                <span class="stat-value" id="compress-success-comp">0 KB</span>
+              </div>
+              <div class="stat-divider"></div>
+              <div class="stat-item">
+                <span class="stat-label">Saved space</span>
+                <span class="stat-value text-accent-green" id="compress-success-saved">0 KB (0%)</span>
+              </div>
+            </div>
+
+            <!-- List of compressed files -->
+            <div class="compressed-files-gallery">
+              <h3>Compressed Files list</h3>
+              <ul class="file-list list-no-hover" id="compress-result-list">
+                <!-- Filled dynamically -->
+              </ul>
+            </div>
+
+            <div class="success-actions">
+              <button type="button" class="btn btn-success btn-large" id="compress-download-btn">
+                <i class="ti ti-download"></i> Download Compressed File(s)
+              </button>
+              <button type="button" class="btn btn-secondary" id="compress-reset-btn">
+                <i class="ti ti-refresh"></i> Compress More Files
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==========================================
+         VIEW 5: PDF TO WORD VIEW
+         ========================================== -->
+    <section id="pdf-to-word-view" class="view-section">
+      <div class="tool-header">
+        <h2><i class="ti ti-file-text header-icon word-color"></i> PDF to Word</h2>
+        <p>Convert PDF documents into editable Word files (.doc) completely inside your browser.</p>
+      </div>
+
+      <div class="main-card glass-panel">
+        <div class="drop-zone" id="word-drop-zone">
+          <input type="file" id="word-file-input" multiple accept=".pdf" style="display: none;">
+          <div class="drop-zone-content">
+            <div class="icon-wrapper word-color-bg">
+              <i class="ti ti-cloud-upload upload-icon"></i>
+            </div>
+            <h3>Drag & drop your PDFs here</h3>
+            <p>or click to browse your local documents</p>
+            <button type="button" class="btn btn-primary word-color-btn" onclick="document.getElementById('word-file-input').click();">
+              <i class="ti ti-file-search"></i> Browse PDFs
+            </button>
+            <span class="file-limits">Supports single or batch file conversions</span>
+          </div>
+        </div>
+
+        <!-- Workspace -->
+        <div id="word-workspace" style="display: none;" class="workspace-wrapper">
+          <div class="workspace-header">
+            <h3><i class="ti ti-files"></i> Files to Convert</h3>
+            <button type="button" class="btn btn-text-danger" id="word-clear-btn">
+              <i class="ti ti-trash"></i> Clear All
+            </button>
+          </div>
+
+          <div class="list-wrapper">
+            <ul class="file-list" id="word-file-list"></ul>
+          </div>
+
+          <div class="settings-panel">
+            <div class="filename-config">
+              <label for="word-output-filename">Output Filename (if single file)</label>
+              <div class="input-group">
+                <i class="ti ti-edit input-icon"></i>
+                <input type="text" id="word-output-filename" value="converted-document">
+                <span class="input-suffix">.doc</span>
+              </div>
+            </div>
+
+            <div class="stats-card">
+              <div class="stat-item">
+                <span class="stat-label">Files Selected</span>
+                <span class="stat-value" id="word-stats-count">0</span>
+              </div>
+              <div class="stat-divider"></div>
+              <div class="stat-item">
+                <span class="stat-label">Total Size</span>
+                <span class="stat-value" id="word-stats-size">0 KB</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="actions-wrapper">
+            <button type="button" class="btn btn-primary btn-large word-color-btn" id="word-execute-btn">
+              <i class="ti ti-file-text"></i> Convert to Word (.doc)
+            </button>
+          </div>
+        </div>
+
+        <!-- Progress Overlay -->
+        <div id="word-progress" style="display: none;" class="progress-overlay-card">
+          <div class="progress-container">
+            <div class="loader-spinner word-color">
+              <i class="ti ti-loader animate-spin"></i>
+            </div>
+            <h3 id="word-progress-text">Reading PDF...</h3>
+            <div class="progress-bar-wrapper">
+              <div class="progress-bar word-color-bar" id="word-progress-bar" style="width: 0%"></div>
+            </div>
+            <span class="progress-percent" id="word-progress-percent">0%</span>
+          </div>
+        </div>
+
+        <!-- Success Screen -->
+        <div id="word-success" style="display: none;" class="success-overlay-card">
+          <div class="success-content">
+            <div class="success-icon-wrapper word-color-success">
+              <div class="success-circle"></div>
+              <i class="ti ti-circle-check success-icon"></i>
+            </div>
+            <h2>Conversion Complete!</h2>
+            <p>Your PDF documents have been converted into editable Word files.</p>
+            
+            <div class="download-details glass-panel">
+              <div class="details-row"><span>File Name:</span><span id="word-download-name" class="detail-value">document.doc</span></div>
+              <div class="details-row"><span>Type:</span><span class="detail-value">Microsoft Word (.doc)</span></div>
+              <div class="details-row"><span>Total Size:</span><span id="word-download-size" class="detail-value">0 KB</span></div>
+            </div>
+
+            <div class="success-actions">
+              <button type="button" class="btn btn-success btn-large" id="word-download-btn">
+                <i class="ti ti-download"></i> Download Word File
+              </button>
+              <button type="button" class="btn btn-secondary" id="word-reset-btn">
+                <i class="ti ti-refresh"></i> Convert More PDFs
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="app-footer glass-panel">
+    <div class="security-badge">
+      <i class="ti ti-shield-lock"></i>
+      <span>100% Client Side Processing. Your files never leave your device.</span>
+    </div>
+    <p class="copyright">Developed by Novatix Solution &bull; &copy; 2026 NovaTool. Local, private, secure.</p>
+  </footer>
+
+  <!-- Get Started Tool Chooser Modal -->
+  <div id="get-started-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-card glass-panel">
+      <button class="modal-close-btn" id="modal-close-btn" aria-label="Close modal"><i class="ti ti-x"></i></button>
+      <h2><i class="ti ti-rocket rocket-icon img-to-pdf-color"></i> Choose a Tool</h2>
+      <p>Which document tool would you like to start with?</p>
+      
+      <div class="modal-options-list">
+        <button class="modal-opt-btn merge-border" onclick="selectModalTool('merge-view')">
+          <span class="opt-icon merge-color"><i class="ti ti-arrows-join"></i></span>
+          <span class="opt-text">
+            <strong>PDF Merge</strong>
+            <span>Combine multiple PDF files into one</span>
+          </span>
+          <i class="ti ti-chevron-right opt-chevron"></i>
+        </button>
+        
+        <button class="modal-opt-btn img2pdf-border" onclick="selectModalTool('image-to-pdf-view')">
+          <span class="opt-icon img-to-pdf-color"><i class="ti ti-photo-plus"></i></span>
+          <span class="opt-text">
+            <strong>Image to PDF</strong>
+            <span>Convert PNG/JPG images to PDF</span>
+          </span>
+          <i class="ti ti-chevron-right opt-chevron"></i>
+        </button>
+        
+        <button class="modal-opt-btn pdf2img-border" onclick="selectModalTool('pdf-to-image-view')">
+          <span class="opt-icon pdf-to-img-color"><i class="ti ti-photo-down"></i></span>
+          <span class="opt-text">
+            <strong>PDF to Image</strong>
+            <span>Extract PDF pages as images</span>
+          </span>
+          <i class="ti ti-chevron-right opt-chevron"></i>
+        </button>
+        
+        <button class="modal-opt-btn compress-border" onclick="selectModalTool('compress-view')">
+          <span class="opt-icon compress-color"><i class="ti ti-zip"></i></span>
+          <span class="opt-text">
+            <strong>Compress Files</strong>
+            <span>Reduce document and image sizes</span>
+          </span>
+          <i class="ti ti-chevron-right opt-chevron"></i>
+        </button>
+
+        <button class="modal-opt-btn word-border" onclick="selectModalTool('pdf-to-word-view')">
+          <span class="opt-icon word-color"><i class="ti ti-file-text"></i></span>
+          <span class="opt-text">
+            <strong>PDF to Word</strong>
+            <span>Convert PDFs to editable DOC files</span>
+          </span>
+          <i class="ti ti-chevron-right opt-chevron"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script logic -->
+  <script src="script.js"></script>
+</body>
+</html>
