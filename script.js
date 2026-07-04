@@ -2021,9 +2021,11 @@ function initPDFToWordTool() {
   function renderWordWorkspace() {
     if (appState.word.files.length === 0) {
       workspace.style.display = 'none';
+      dropZone.style.display = 'flex';
       return;
     }
     workspace.style.display = 'flex';
+    dropZone.style.display = 'none';
     fileListEl.innerHTML = '';
 
     appState.word.files.forEach(item => {
@@ -2352,9 +2354,11 @@ function initPPTToPDFTool() {
   function renderPptWorkspace() {
     if (appState.ppt.files.length === 0) {
       workspace.style.display = 'none';
+      dropZone.style.display = 'flex';
       return;
     }
     workspace.style.display = 'flex';
+    dropZone.style.display = 'none';
     fileListEl.innerHTML = '';
 
     appState.ppt.files.forEach(item => {
