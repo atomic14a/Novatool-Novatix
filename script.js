@@ -73,6 +73,14 @@ const appState = {
 // CORE APP ROUTING & INTERACTIVE NAVS
 // ==========================================================================
 document.addEventListener('DOMContentLoaded', () => {
+  // Prevent default drag and drop behavior globally so dropping files doesn't navigate away
+  ['dragover', 'drop'].forEach(name => {
+    window.addEventListener(name, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }, false);
+  });
+
   initAppRouter();
   initThemeManager();
   
@@ -329,13 +337,27 @@ function initPDFMergeTool() {
 
   // Drag and Drop listeners
   ['dragenter', 'dragover'].forEach(name => {
-    dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener(name, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.add('dragover');
+    });
   });
-  ['dragleave', 'drop'].forEach(name => {
-    dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+  ['dragleave'].forEach(name => {
+    dropZone.addEventListener(name, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.remove('dragover');
+    });
   });
   dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropZone.classList.remove('dragover');
     handleMergeFiles(e.dataTransfer.files);
+  });
+  dropZone.addEventListener('click', () => {
+    fileInput.click();
   });
   fileInput.addEventListener('change', (e) => {
     handleMergeFiles(e.target.files);
@@ -645,13 +667,27 @@ function initImageToPDFTool() {
 
   // Drag and Drop
   ['dragenter', 'dragover'].forEach(name => {
-    dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener(name, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.add('dragover');
+    });
   });
-  ['dragleave', 'drop'].forEach(name => {
-    dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+  ['dragleave'].forEach(name => {
+    dropZone.addEventListener(name, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.remove('dragover');
+    });
   });
   dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropZone.classList.remove('dragover');
     handleImgFiles(e.dataTransfer.files);
+  });
+  dropZone.addEventListener('click', () => {
+    fileInput.click();
   });
   fileInput.addEventListener('change', (e) => {
     handleImgFiles(e.target.files);
@@ -1104,13 +1140,27 @@ function initPDFToImageTool() {
 
   // Drag and Drop
   ['dragenter', 'dragover'].forEach(name => {
-    dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener(name, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.add('dragover');
+    });
   });
-  ['dragleave', 'drop'].forEach(name => {
-    dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+  ['dragleave'].forEach(name => {
+    dropZone.addEventListener(name, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.remove('dragover');
+    });
   });
   dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropZone.classList.remove('dragover');
     handlePdf2ImgFiles(e.dataTransfer.files);
+  });
+  dropZone.addEventListener('click', () => {
+    fileInput.click();
   });
   fileInput.addEventListener('change', (e) => {
     handlePdf2ImgFiles(e.target.files);
@@ -1436,13 +1486,27 @@ function initCompressTool() {
 
   // Drag and Drop
   ['dragenter', 'dragover'].forEach(name => {
-    dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener(name, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.add('dragover');
+    });
   });
-  ['dragleave', 'drop'].forEach(name => {
-    dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+  ['dragleave'].forEach(name => {
+    dropZone.addEventListener(name, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.remove('dragover');
+    });
   });
   dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropZone.classList.remove('dragover');
     handleCompressFiles(e.dataTransfer.files);
+  });
+  dropZone.addEventListener('click', () => {
+    fileInput.click();
   });
   fileInput.addEventListener('change', (e) => {
     handleCompressFiles(e.target.files);
@@ -1881,13 +1945,27 @@ function initPDFToWordTool() {
 
   // Drag and Drop
   ['dragenter', 'dragover'].forEach(name => {
-    dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener(name, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.add('dragover');
+    });
   });
-  ['dragleave', 'drop'].forEach(name => {
-    dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+  ['dragleave'].forEach(name => {
+    dropZone.addEventListener(name, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.remove('dragover');
+    });
   });
   dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropZone.classList.remove('dragover');
     handleWordFiles(e.dataTransfer.files);
+  });
+  dropZone.addEventListener('click', () => {
+    fileInput.click();
   });
   fileInput.addEventListener('change', (e) => {
     handleWordFiles(e.target.files);
@@ -2196,13 +2274,27 @@ function initPPTToPDFTool() {
 
   // Drag and Drop
   ['dragenter', 'dragover'].forEach(name => {
-    dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    dropZone.addEventListener(name, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.add('dragover');
+    });
   });
-  ['dragleave', 'drop'].forEach(name => {
-    dropZone.addEventListener(name, (e) => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+  ['dragleave'].forEach(name => {
+    dropZone.addEventListener(name, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      dropZone.classList.remove('dragover');
+    });
   });
   dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dropZone.classList.remove('dragover');
     handlePptFiles(e.dataTransfer.files);
+  });
+  dropZone.addEventListener('click', () => {
+    fileInput.click();
   });
   fileInput.addEventListener('change', (e) => {
     handlePptFiles(e.target.files);

@@ -564,6 +564,10 @@ body.light-mode .nav-tab:hover {
   transition: var(--transition-smooth);
 }
 
+.drop-zone * {
+  pointer-events: none;
+}
+
 .drop-zone:hover, .drop-zone.dragover {
   border-color: var(--border-focus);
   background: var(--glass-card-hover);
