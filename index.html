@@ -68,6 +68,7 @@
         <li><a href="#" class="nav-tab" data-target="pdf-to-image-view"><i class="ti ti-photo-down"></i> PDF to Image</a></li>
         <li><a href="#" class="nav-tab" data-target="compress-view"><i class="ti ti-zip"></i> Compress Files</a></li>
         <li><a href="#" class="nav-tab" data-target="pdf-to-word-view"><i class="ti ti-file-text"></i> PDF to Word</a></li>
+        <li><a href="#" class="nav-tab" data-target="ppt-to-pdf-view"><i class="ti ti-presentation"></i> PPT to PDF</a></li>
       </ul>
 
       <div class="nav-actions">
@@ -89,6 +90,7 @@
     <a href="#" class="mobile-nav-link" data-target="pdf-to-image-view"><i class="ti ti-photo-down"></i> PDF to Image</a>
     <a href="#" class="mobile-nav-link" data-target="compress-view"><i class="ti ti-zip"></i> Compress Files</a>
     <a href="#" class="mobile-nav-link" data-target="pdf-to-word-view"><i class="ti ti-file-text"></i> PDF to Word</a>
+    <a href="#" class="mobile-nav-link" data-target="ppt-to-pdf-view"><i class="ti ti-presentation"></i> PPT to PDF</a>
   </div>
 
   <!-- Toast Notification Container -->
@@ -159,6 +161,16 @@
           </div>
           <h3>PDF to Word</h3>
           <p>Extract text formatting and paragraphs from PDF pages and save them as editable DOC files.</p>
+          <span class="tool-card-btn">Open Tool <i class="ti ti-chevron-right"></i></span>
+        </div>
+
+        <!-- Card 6: PPT to PDF -->
+        <div class="tool-card glass-panel ppt-hover" onclick="switchTab('ppt-to-pdf-view')">
+          <div class="tool-card-icon-wrapper ppt-color">
+            <i class="ti ti-presentation"></i>
+          </div>
+          <h3>PPT to PDF</h3>
+          <p>Convert PowerPoint slides into standard, structured PDF slide pages locally.</p>
           <span class="tool-card-btn">Open Tool <i class="ti ti-chevron-right"></i></span>
         </div>
       </div>
@@ -912,6 +924,112 @@
       </div>
     </section>
 
+    <!-- ==========================================
+         VIEW 6: PPT TO PDF VIEW
+         ========================================== -->
+    <section id="ppt-to-pdf-view" class="view-section">
+      <div class="tool-header">
+        <h2><i class="ti ti-presentation header-icon ppt-color"></i> PPT to PDF</h2>
+        <p>Convert PowerPoint presentations (.pptx) into standard PDF documents entirely in your browser.</p>
+      </div>
+
+      <div class="main-card glass-panel">
+        <div class="drop-zone" id="ppt-drop-zone">
+          <input type="file" id="ppt-file-input" multiple accept=".pptx" style="display: none;">
+          <div class="drop-zone-content">
+            <div class="icon-wrapper ppt-color-bg">
+              <i class="ti ti-cloud-upload upload-icon"></i>
+            </div>
+            <h3>Drag &amp; drop your PowerPoint files here</h3>
+            <p>or click to browse your local documents</p>
+            <button type="button" class="btn btn-primary ppt-color-btn" onclick="document.getElementById('ppt-file-input').click();">
+              <i class="ti ti-file-search"></i> Browse PPTX
+            </button>
+            <span class="file-limits">Supports single or bulk presentation conversions</span>
+          </div>
+        </div>
+
+        <!-- Workspace -->
+        <div id="ppt-workspace" style="display: none;" class="workspace-wrapper">
+          <div class="workspace-header">
+            <h3><i class="ti ti-files"></i> Presentations to Convert</h3>
+            <button type="button" class="btn btn-text-danger" id="ppt-clear-btn">
+              <i class="ti ti-trash"></i> Clear All
+            </button>
+          </div>
+
+          <div class="list-wrapper">
+            <ul class="file-list" id="ppt-file-list"></ul>
+          </div>
+
+          <div class="settings-panel">
+            <div class="filename-config">
+              <span class="settings-info-badge"><i class="ti ti-info-circle"></i> Converted files will match their original names (e.g., slide.pptx &rarr; slide.pdf)</span>
+            </div>
+
+            <div class="stats-card">
+              <div class="stat-item">
+                <span class="stat-label">Files Selected</span>
+                <span class="stat-value" id="ppt-stats-count">0</span>
+              </div>
+              <div class="stat-divider"></div>
+              <div class="stat-item">
+                <span class="stat-label">Total Size</span>
+                <span class="stat-value" id="ppt-stats-size">0 KB</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="actions-wrapper">
+            <button type="button" class="btn btn-primary btn-large ppt-color-btn" id="ppt-execute-btn">
+              <i class="ti ti-file-type-pdf"></i> Convert to PDF
+            </button>
+          </div>
+        </div>
+
+        <!-- Progress Overlay -->
+        <div id="ppt-progress" style="display: none;" class="progress-overlay-card">
+          <div class="progress-container">
+            <div class="loader-spinner ppt-color">
+              <i class="ti ti-loader animate-spin"></i>
+            </div>
+            <h3 id="ppt-progress-text">Reading Presentation...</h3>
+            <div class="progress-bar-wrapper">
+              <div class="progress-bar ppt-color-bar" id="ppt-progress-bar" style="width: 0%"></div>
+            </div>
+            <span class="progress-percent" id="ppt-progress-percent">0%</span>
+          </div>
+        </div>
+
+        <!-- Success Screen -->
+        <div id="ppt-success" style="display: none;" class="success-overlay-card">
+          <div class="success-content">
+            <div class="success-icon-wrapper ppt-color-success">
+              <div class="success-circle"></div>
+              <i class="ti ti-circle-check success-icon"></i>
+            </div>
+            <h2>Conversion Complete!</h2>
+            <p>Your PowerPoint slides have been converted to high-fidelity PDF documents.</p>
+            
+            <div class="download-details glass-panel">
+              <div class="details-row"><span>File Name:</span><span id="ppt-download-name" class="detail-value">document.pdf</span></div>
+              <div class="details-row"><span>Type:</span><span class="detail-value">PDF Document (.pdf)</span></div>
+              <div class="details-row"><span>Total Size:</span><span id="ppt-download-size" class="detail-value">0 KB</span></div>
+            </div>
+
+            <div class="success-actions">
+              <button type="button" class="btn btn-success btn-large" id="ppt-download-btn">
+                <i class="ti ti-download"></i> Download Converted PDF(s)
+              </button>
+              <button type="button" class="btn btn-secondary" id="ppt-reset-btn">
+                <i class="ti ti-refresh"></i> Convert More PPTX
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
   </div>
 
   <!-- FOOTER -->
@@ -972,6 +1090,15 @@
           <span class="opt-text">
             <strong>PDF to Word</strong>
             <span>Convert PDFs to editable DOC files</span>
+          </span>
+          <i class="ti ti-chevron-right opt-chevron"></i>
+        </button>
+
+        <button class="modal-opt-btn ppt-border" onclick="selectModalTool('ppt-to-pdf-view')">
+          <span class="opt-icon ppt-color"><i class="ti ti-presentation"></i></span>
+          <span class="opt-text">
+            <strong>PPT to PDF</strong>
+            <span>Convert presentations to PDF files</span>
           </span>
           <i class="ti ti-chevron-right opt-chevron"></i>
         </button>
