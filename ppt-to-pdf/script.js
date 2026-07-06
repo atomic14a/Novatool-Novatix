@@ -1,7 +1,7 @@
 const appState = {
   ppt: {
-    files: [], // Array of: { id, file, name, size }
-    convertedFiles: [], // Array of: { name, originalSize, pdfBlob, url }
+    files: [],
+    convertedFiles: [],
     zipBlob: null,
     zipBlobUrl: null
   }
@@ -11,6 +11,44 @@ document.addEventListener('DOMContentLoaded', () => {
   initPPTToPDFTool();
 });
 
+// Namespace-safe XML tag finder — works in all browsers regardless of
+// how DOMParser handles the "p:", "a:", "r:" namespace prefixes.
+function xmlFind(parent, localName) {
+  // Try namespace-aware first
+  let nodes = parent.getElementsByTagNameNS('*', localName);
+  if (nodes.length > 0) return Array.from(nodes);
+  // Fallback: try with common OOXML prefixes
+  const prefixes = ['p', 'a', 'r', 'c', 'mc', 'wp', 'dgm'];
+  for (const pfx of prefixes) {
+    nodes = parent.getElementsByTagName(`${pfx}:${localName}`);
+    if (nodes.length > 0) return Array.from(nodes);
+  }
+  // Last resort: plain tag name
+  nodes = parent.getElementsByTagName(localName);
+  return Array.from(nodes);
+}
+
+function xmlFindFirst(parent, localName) {
+  const arr = xmlFind(parent, localName);
+  return arr.length > 0 ? arr[0] : null;
+}
+
+function xmlAttr(el, localName) {
+  if (!el) return null;
+  // Try plain attribute first
+  let val = el.getAttribute(localName);
+  if (val !== null) return val;
+  // Try with namespace prefix variants
+  const parts = localName.split(':');
+  if (parts.length === 2) {
+    val = el.getAttributeNS('*', parts[1]);
+    if (val !== null) return val;
+    // Try without prefix
+    val = el.getAttribute(parts[1]);
+  }
+  return val;
+}
+
 function initPPTToPDFTool() {
   const dropZone = document.getElementById('ppt-drop-zone');
   const fileInput = document.getElementById('ppt-file-input');
@@ -19,13 +57,11 @@ function initPPTToPDFTool() {
   const clearBtn = document.getElementById('ppt-clear-btn');
   const executeBtn = document.getElementById('ppt-execute-btn');
   
-  // Progress overlay
   const progressOverlay = document.getElementById('ppt-progress');
   const progressBar = document.getElementById('ppt-progress-bar');
   const progressText = document.getElementById('ppt-progress-text');
   const progressPercent = document.getElementById('ppt-progress-percent');
   
-  // Success overlay
   const successOverlay = document.getElementById('ppt-success');
   const successDownloadBtn = document.getElementById('ppt-download-btn');
   const successResetBtn = document.getElementById('ppt-reset-btn');
@@ -191,7 +227,6 @@ function initPPTToPDFTool() {
       setPptProgress(90, 'Preparing final PDF documents...');
       await sleep(200);
 
-      // ZIP if bulk uploader
       if (appState.ppt.convertedFiles.length > 1) {
         const zip = new JSZip();
         appState.ppt.convertedFiles.forEach(f => {
@@ -208,11 +243,9 @@ function initPPTToPDFTool() {
       setPptProgress(100, 'Conversion complete!');
       await sleep(250);
 
-      // success screen
       progressOverlay.style.display = 'none';
       successOverlay.style.display = 'flex';
 
-      // update details card
       if (appState.ppt.convertedFiles.length > 1) {
         document.getElementById('ppt-download-name').textContent = 'ppt-to-pdf-converted.zip';
         document.getElementById('ppt-download-size').textContent = formatBytes(appState.ppt.zipBlob.size);
@@ -233,15 +266,13 @@ function initPPTToPDFTool() {
     }
   }
 
-  // Parse slides in the PPTX package and draw pages in PDF-Lib
+  // Parse slides using namespace-safe XML queries and draw pages in PDF-Lib
   async function convertPptxToPdf(file, progressCallback) {
     const arrayBuffer = await readFileAsArrayBuffer(file);
     const zip = await JSZip.loadAsync(arrayBuffer);
     
-    // Find all slide files in ppt/slides/slideX.xml
-    const slidePaths = Object.keys(zip.files).filter(path => /^ppt\/slides\/slide\d+\.xml$/.test(path));
+    const slidePaths = Object.keys(zip.files).filter(path => /^ppt\/slides\/slide\d+\.xml$/i.test(path));
     
-    // Sort slides numerically
     slidePaths.sort((a, b) => {
       const numA = parseInt(a.match(/\d+/)[0], 10);
       const numB = parseInt(b.match(/\d+/)[0], 10);
@@ -253,17 +284,16 @@ function initPPTToPDFTool() {
     }
     
     const pdfDoc = await PDFLib.PDFDocument.create();
-    
     const fontHelvetica = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
     const fontHelveticaBold = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
     
     let slideWidth = 720;
-    let slideHeight = 405; // 16:9 widescreen defaults
+    let slideHeight = 405;
     
     try {
       const presXmlStr = await zip.file("ppt/presentation.xml").async("string");
       const presDoc = new DOMParser().parseFromString(presXmlStr, "text/xml");
-      const sldSzNode = presDoc.getElementsByTagName("p:sldSz")[0];
+      const sldSzNode = xmlFindFirst(presDoc, "sldSz");
       if (sldSzNode) {
         const cx = parseInt(sldSzNode.getAttribute("cx"), 10);
         const cy = parseInt(sldSzNode.getAttribute("cy"), 10);
@@ -273,7 +303,7 @@ function initPPTToPDFTool() {
         }
       }
     } catch (e) {
-      console.warn("Could not read slide size dimensions, defaulting to 16:9.", e);
+      console.warn("Could not read slide size, defaulting to 16:9.", e);
     }
 
     for (let i = 0; i < slidePaths.length; i++) {
@@ -287,16 +317,17 @@ function initPPTToPDFTool() {
       const xmlStr = await zip.file(slidePath).async("string");
       const xmlDoc = new DOMParser().parseFromString(xmlStr, "text/xml");
       
+      // Extract all text paragraphs from shape text bodies
       const paragraphs = [];
-      const spNodes = xmlDoc.getElementsByTagName("p:sp");
-      for (let sp of spNodes) {
-        const txBody = sp.getElementsByTagName("p:txBody")[0];
+      const spNodes = xmlFind(xmlDoc, "sp");
+      for (const sp of spNodes) {
+        const txBody = xmlFindFirst(sp, "txBody");
         if (txBody) {
-          const pNodes = txBody.getElementsByTagName("a:p");
-          for (let p of pNodes) {
-            const tNodes = p.getElementsByTagName("a:t");
+          const pNodes = xmlFind(txBody, "p");
+          for (const p of pNodes) {
+            const tNodes = xmlFind(p, "t");
             let text = "";
-            for (let t of tNodes) {
+            for (const t of tNodes) {
               text += t.textContent;
             }
             if (text.trim() !== "") {
@@ -306,29 +337,36 @@ function initPPTToPDFTool() {
         }
       }
       
+      // Extract embedded images
       const images = [];
       const relsPath = `ppt/slides/_rels/slide${slideNum}.xml.rels`;
       if (zip.file(relsPath)) {
-        const relsXmlStr = await zip.file(relsPath).async("string");
-        const relsDoc = new DOMParser().parseFromString(relsXmlStr, "text/xml");
-        const relNodes = relsDoc.getElementsByTagName("Relationship");
-        
-        const picNodes = xmlDoc.getElementsByTagName("p:pic");
-        for (let pic of picNodes) {
-          const blip = pic.getElementsByTagName("a:blip")[0];
-          if (blip) {
-            const embedId = blip.getAttribute("r:embed");
-            const relNode = Array.from(relNodes).find(r => r.getAttribute("Id") === embedId);
-            if (relNode) {
-              const target = relNode.getAttribute("Target");
-              const mediaPath = target.replace(/^\.\.\//, "ppt/");
-              if (zip.file(mediaPath)) {
-                const imgBytes = await zip.file(mediaPath).async("uint8array");
-                const ext = mediaPath.split(".").pop().toLowerCase();
-                images.push({ bytes: imgBytes, ext: ext });
+        try {
+          const relsXmlStr = await zip.file(relsPath).async("string");
+          const relsDoc = new DOMParser().parseFromString(relsXmlStr, "text/xml");
+          const relNodes = xmlFind(relsDoc, "Relationship");
+          
+          const picNodes = xmlFind(xmlDoc, "pic");
+          for (const pic of picNodes) {
+            const blip = xmlFindFirst(pic, "blip");
+            if (blip) {
+              const embedId = blip.getAttribute("r:embed") || blip.getAttribute("embed");
+              if (embedId) {
+                const relNode = relNodes.find(r => r.getAttribute("Id") === embedId);
+                if (relNode) {
+                  const target = relNode.getAttribute("Target");
+                  const mediaPath = target.replace(/^\.\.\//, "ppt/");
+                  if (zip.file(mediaPath)) {
+                    const imgBytes = await zip.file(mediaPath).async("uint8array");
+                    const ext = mediaPath.split(".").pop().toLowerCase();
+                    images.push({ bytes: imgBytes, ext: ext });
+                  }
+                }
               }
             }
           }
+        } catch (relErr) {
+          console.warn("Failed to parse slide rels:", relErr);
         }
       }
       
@@ -336,30 +374,24 @@ function initPPTToPDFTool() {
       
       // Draw background
       page.drawRectangle({
-        x: 0,
-        y: 0,
-        width: slideWidth,
-        height: slideHeight,
+        x: 0, y: 0,
+        width: slideWidth, height: slideHeight,
         color: PDFLib.rgb(15 / 255, 23 / 255, 42 / 255)
       });
       
-      // Draw PPT Orange base line
+      // Draw orange accent bar
       page.drawRectangle({
-        x: 0,
-        y: 0,
-        width: slideWidth,
-        height: 6,
+        x: 0, y: 0,
+        width: slideWidth, height: 6,
         color: PDFLib.rgb(210 / 255, 71 / 255, 38 / 255)
       });
       
       const titleText = paragraphs[0] || `Slide ${i + 1}`;
       const bulletTexts = paragraphs.slice(1);
       
-      // Title
       const titleFontSize = Math.min(26, Math.max(16, Math.round(slideWidth * 0.035)));
       page.drawText(titleText, {
-        x: 40,
-        y: slideHeight - 50,
+        x: 40, y: slideHeight - 50,
         size: titleFontSize,
         font: fontHelveticaBold,
         color: PDFLib.rgb(1, 1, 1),
@@ -367,9 +399,7 @@ function initPPTToPDFTool() {
         lineHeight: titleFontSize * 1.2
       });
       
-      // Layout
       if (images.length > 0) {
-        // Split layout: Text left, Image right
         const leftColWidth = (slideWidth - 100) * 0.5;
         const rightColWidth = (slideWidth - 100) * 0.5;
         
@@ -379,8 +409,7 @@ function initPPTToPDFTool() {
         bulletTexts.slice(0, 5).forEach(b => {
           const textToDraw = b.startsWith("•") || b.startsWith("-") ? b : `• ${b}`;
           page.drawText(textToDraw, {
-            x: 40,
-            y: currentY,
+            x: 40, y: currentY,
             size: bulletFontSize,
             font: fontHelvetica,
             color: PDFLib.rgb(203 / 255, 213 / 255, 225 / 255),
@@ -400,38 +429,27 @@ function initPPTToPDFTool() {
           }
           
           if (embeddedImg) {
-            const imgWidth = embeddedImg.width;
-            const imgHeight = embeddedImg.height;
             const maxImgWidth = rightColWidth;
             const maxImgHeight = slideHeight - 120;
-            
-            const scale = Math.min(maxImgWidth / imgWidth, maxImgHeight / imgHeight);
-            const drawW = imgWidth * scale;
-            const drawH = imgHeight * scale;
-            
+            const scale = Math.min(maxImgWidth / embeddedImg.width, maxImgHeight / embeddedImg.height);
+            const drawW = embeddedImg.width * scale;
+            const drawH = embeddedImg.height * scale;
             const drawX = slideWidth - 40 - rightColWidth + (rightColWidth - drawW) * 0.5;
             const drawY = 30 + (maxImgHeight - drawH) * 0.5;
             
-            page.drawImage(embeddedImg, {
-              x: drawX,
-              y: drawY,
-              width: drawW,
-              height: drawH
-            });
+            page.drawImage(embeddedImg, { x: drawX, y: drawY, width: drawW, height: drawH });
           }
         } catch (err) {
           console.warn("Failed to embed slide image:", err);
         }
       } else {
-        // Full width text layout
         let currentY = slideHeight - 100;
         const bulletFontSize = Math.min(15, Math.max(11, Math.round(slideWidth * 0.022)));
         
         bulletTexts.slice(0, 7).forEach(b => {
           const textToDraw = b.startsWith("•") || b.startsWith("-") ? b : `• ${b}`;
           page.drawText(textToDraw, {
-            x: 50,
-            y: currentY,
+            x: 50, y: currentY,
             size: bulletFontSize,
             font: fontHelvetica,
             color: PDFLib.rgb(203 / 255, 213 / 255, 225 / 255),
@@ -461,7 +479,6 @@ function initPPTToPDFTool() {
       if (f.url) URL.revokeObjectURL(f.url);
     });
     appState.ppt.convertedFiles = [];
-
     if (appState.ppt.zipBlobUrl) {
       URL.revokeObjectURL(appState.ppt.zipBlobUrl);
       appState.ppt.zipBlobUrl = null;
@@ -489,13 +506,7 @@ function formatBytes(bytes) {
 }
 
 function escapeHtml(text) {
-  const map = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  };
+  const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
   return text.replace(/[&<>"']/g, m => map[m]);
 }
 

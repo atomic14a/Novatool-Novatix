@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PDF N-Up — Multiple Pages Per Sheet - NovaTool</title>
+  <meta name="description" content="Arrange 2, 4, 6, or 8 PDF pages on a single sheet. Free, local, and private.">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet">
+
+  <!-- Tabler Icons CSS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+
+  <!-- Core Stylesheet -->
+  <link rel="stylesheet" href="../style.css">
+
+  <!-- PDF.js (CDN) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+  <!-- PDF-Lib (CDN) -->
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+
+  <style>
+    /* N-Up Layout Panel */
+    .nup-layout-panel {
+      display: none;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .nup-file-info-bar {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 18px;
+      background: var(--glass-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+    }
+    .nup-file-info-bar .nup-fi-icon {
+      width: 42px; height: 42px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, #06b6d4, #0891b2);
+      color: #fff; font-size: 20px;
+    }
+    .nup-file-info-bar .nup-fi-details {
+      flex: 1;
+    }
+    .nup-file-info-bar .nup-fi-details .nup-fi-name {
+      font-weight: 600; color: var(--text-primary);
+      display: block; margin-bottom: 2px;
+      max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .nup-file-info-bar .nup-fi-details .nup-fi-size {
+      font-size: 0.8rem; color: var(--text-muted);
+    }
+    .nup-file-info-bar .btn-change {
+      background: var(--glass-card-hover);
+      border: 1px solid var(--border-color);
+      color: var(--text-secondary);
+      padding: 7px 14px; border-radius: var(--radius-sm);
+      cursor: pointer; font-size: 0.82rem;
+      transition: all 0.2s;
+    }
+    .nup-file-info-bar .btn-change:hover {
+      background: var(--border-hover);
+      color: var(--text-primary);
+    }
+
+    .nup-layout-heading {
+      text-align: center;
+    }
+    .nup-layout-heading h3 {
+      font-size: 1.1rem;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+    }
+    .nup-layout-heading p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .nup-layout-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+    }
+    @media (max-width: 600px) {
+      .nup-layout-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .nup-layout-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      padding: 22px 14px;
+      background: var(--glass-card);
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.25s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .nup-layout-card:hover {
+      border-color: #06b6d4;
+      background: var(--glass-card-hover);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 28px rgba(6, 182, 212, 0.12);
+    }
+    .nup-layout-card.selected {
+      border-color: #06b6d4;
+      background: rgba(6, 182, 212, 0.08);
+      box-shadow: 0 0 24px rgba(6, 182, 212, 0.2);
+    }
+    .nup-layout-card.selected::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, #06b6d4, #0891b2);
+    }
+
+    .nup-card-preview {
+      width: 64px;
+      height: 80px;
+      border: 1.5px solid var(--border-color);
+      border-radius: 6px;
+      display: grid;
+      gap: 2px;
+      padding: 3px;
+      background: var(--glass-input);
+    }
+    .nup-card-preview.n2 { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+    .nup-card-preview.n4 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+    .nup-card-preview.n6 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr 1fr; }
+    .nup-card-preview.n8 { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr 1fr 1fr; }
+
+    .nup-card-preview .mini-page {
+      background: linear-gradient(135deg, rgba(6,182,212,0.15), rgba(6,182,212,0.05));
+      border: 1px solid rgba(6,182,212,0.25);
+      border-radius: 2px;
+    }
+
+    .nup-layout-card .nup-card-label {
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text-primary);
+    }
+    .nup-layout-card .nup-card-sub {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    /* Result details */
+    .nup-result-info {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .nup-result-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.85rem;
+    }
+    .nup-result-row .label { color: var(--text-muted); }
+    .nup-result-row .value { color: var(--text-primary); font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <!-- Background glows -->
+  <div class="bg-glow-container">
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+    <div class="bg-glow bg-glow-3"></div>
+  </div>
+
+  <!-- STICKY NAVIGATION BAR -->
+  <nav class="navbar glass-panel">
+    <div class="nav-container">
+      <a href="../index.html" class="logo" id="nav-logo-link">
+        <svg class="logo-svg" width="34" height="34" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#6366f1" />
+              <stop offset="50%" stop-color="#a855f7" />
+              <stop offset="100%" stop-color="#ec4899" />
+            </linearGradient>
+          </defs>
+          <path d="M8 12C8 9.79086 9.79086 8 12 8H24C26.2091 8 28 9.79086 28 12V24C28 26.2091 26.2091 28 24 28H12C9.79086 28 8 26.2091 8 24V12Z" stroke="url(#logo-grad)" stroke-width="2.5" stroke-linejoin="round" />
+          <path d="M18 10L20.5 15.5L26 18L20.5 20.5L18 26L15.5 20.5L10 18L15.5 15.5L18 10Z" fill="url(#logo-grad)" />
+          <circle cx="18" cy="18" r="2" fill="#ffffff" />
+        </svg>
+        <span>Nova<span class="logo-accent">Tool</span></span>
+      </a>
+      
+      <ul class="nav-links">
+        <li><a href="../index.html" class="nav-tab"><i class="ti ti-smart-home"></i> Home</a></li>
+        <li><a href="../pdf-merge/index.html" class="nav-tab"><i class="ti ti-arrows-join"></i> PDF Merge</a></li>
+        <li><a href="../image-to-pdf/index.html" class="nav-tab"><i class="ti ti-photo-plus"></i> Image to PDF</a></li>
+        <li><a href="../pdf-to-image/index.html" class="nav-tab"><i class="ti ti-photo-down"></i> PDF to Image</a></li>
+        <li><a href="../compress-files/index.html" class="nav-tab"><i class="ti ti-zip"></i> Compress Files</a></li>
+        <li><a href="../pdf-to-word/index.html" class="nav-tab"><i class="ti ti-file-text"></i> PDF to Word</a></li>
+        <li><a href="../ppt-to-pdf/index.html" class="nav-tab"><i class="ti ti-presentation"></i> PPT to PDF</a></li>
+        <li><a href="index.html" class="nav-tab active"><i class="ti ti-layout-grid"></i> PDF N-Up</a></li>
+      </ul>
+
+      <div class="nav-actions">
+        <button id="theme-toggle" class="theme-toggle-btn" title="Toggle Theme" aria-label="Toggle Theme">
+          <i class="ti ti-moon"></i>
+        </button>
+        <button id="mobile-menu-btn" class="mobile-menu-btn" title="Open Menu" aria-label="Open Menu">
+          <i class="ti ti-menu-2"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile Dropdown Navigation Menu -->
+  <div id="mobile-nav-menu" class="mobile-nav-menu glass-panel">
+    <a href="../index.html" class="mobile-nav-link"><i class="ti ti-smart-home"></i> Home</a>
+    <a href="../pdf-merge/index.html" class="mobile-nav-link"><i class="ti ti-arrows-join"></i> PDF Merge</a>
+    <a href="../image-to-pdf/index.html" class="mobile-nav-link"><i class="ti ti-photo-plus"></i> Image to PDF</a>
+    <a href="../pdf-to-image/index.html" class="mobile-nav-link"><i class="ti ti-photo-down"></i> PDF to Image</a>
+    <a href="../compress-files/index.html" class="mobile-nav-link"><i class="ti ti-zip"></i> Compress Files</a>
+    <a href="../pdf-to-word/index.html" class="mobile-nav-link"><i class="ti ti-file-text"></i> PDF to Word</a>
+    <a href="../ppt-to-pdf/index.html" class="mobile-nav-link"><i class="ti ti-presentation"></i> PPT to PDF</a>
+    <a href="index.html" class="mobile-nav-link active"><i class="ti ti-layout-grid"></i> PDF N-Up</a>
+  </div>
+
+  <!-- Toast Notification Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div class="app-container">
+
+    <section id="nup-view" class="view-section active-view">
+      <div class="tool-header">
+        <h2><i class="ti ti-layout-grid header-icon" style="color: #06b6d4;"></i> PDF N-Up</h2>
+        <p>Arrange multiple PDF pages onto a single sheet. Choose 2, 4, 6, or 8 pages per sheet.</p>
+      </div>
+
+      <div class="main-card glass-panel">
+        <!-- STEP 1: Drop Zone -->
+        <div class="drop-zone" id="nup-drop-zone">
+          <input type="file" id="nup-file-input" accept=".pdf" style="display: none;">
+          <div class="drop-zone-content">
+            <div class="icon-wrapper" style="background: linear-gradient(135deg, rgba(6,182,212,0.15), rgba(6,182,212,0.05)); border-color: rgba(6,182,212,0.3);">
+              <i class="ti ti-file-symlink upload-icon" style="color: #06b6d4;"></i>
+            </div>
+            <h3>Drag &amp; drop your PDF here</h3>
+            <p>or click to browse your local files</p>
+            <button type="button" class="btn btn-primary" style="background: linear-gradient(135deg, #06b6d4, #0891b2);" onclick="document.getElementById('nup-file-input').click();">
+              <i class="ti ti-file-search"></i> Select PDF File
+            </button>
+            <span class="file-limits">Upload a single PDF to rearrange pages</span>
+          </div>
+        </div>
+
+        <!-- STEP 2: Layout Selection -->
+        <div id="nup-layout-panel" class="nup-layout-panel">
+          <div class="nup-file-info-bar">
+            <div class="nup-fi-icon"><i class="ti ti-file-type-pdf"></i></div>
+            <div class="nup-fi-details">
+              <span class="nup-fi-name" id="nup-file-name">file.pdf</span>
+              <span class="nup-fi-size" id="nup-file-size">0 KB</span>
+            </div>
+            <button class="btn-change" id="nup-change-file"><i class="ti ti-switch-horizontal"></i> Change File</button>
+          </div>
+
+          <div class="nup-layout-heading">
+            <h3>Select Pages Per Sheet</h3>
+            <p>Click a layout to start conversion instantly</p>
+          </div>
+
+          <div class="nup-layout-grid">
+            <!-- 2-up -->
+            <div class="nup-layout-card" data-nup="2">
+              <div class="nup-card-preview n2">
+                <div class="mini-page"></div>
+                <div class="mini-page"></div>
+              </div>
+              <span class="nup-card-label">2-Up</span>
+              <span class="nup-card-sub">1×2 Grid</span>
+            </div>
+            <!-- 4-up -->
+            <div class="nup-layout-card" data-nup="4">
+              <div class="nup-card-preview n4">
+                <div class="mini-page"></div>
+                <div class="mini-page"></div>
+                <div class="mini-page"></div>
+                <div class="mini-page"></div>
+              </div>
+              <span class="nup-card-label">4-Up</span>
+              <span class="nup-card-sub">2×2 Grid</span>
+            </div>
+            <!-- 6-up -->
+            <div class="nup-layout-card" data-nup="6">
+              <div class="nup-card-preview n6">
+                <div class="mini-page"></div>
+                <div class="mini-page"></div>
+                <div class="mini-page"></div>
+                <div class="mini-page"></div>
+                <div class="mini-page"></div>
+                <div class="mini-page"></div>
+              </div>
+              <span class="nup-card-label">6-Up</span>
+              <span class="nup-card-sub">2×3 Grid</span>
+            </div>
+            <!-- 8-up -->
+            <div class="nup-layout-card" data-nup="8">
+              <div class="nup-card-preview n8">
+                <div class="mini-page"></div>
+                <div class="mini-page"></div>
+                <div class="mini-page"></div>
+                <div class="mini-page"></div>
+                <div class="mini-page"></div>
+                <div class="mini-page"></div>
+                <div class="mini-page"></div>
+                <div class="mini-page"></div>
+              </div>
+              <span class="nup-card-label">8-Up</span>
+              <span class="nup-card-sub">2×4 Grid</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Overlay -->
+        <div id="nup-progress" class="progress-overlay" style="display: none;">
+          <div class="progress-content">
+            <div class="loader-ring nup-loader-ring">
+              <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="42" /></svg>
+            </div>
+            <h3 id="nup-progress-text">Preparing...</h3>
+            <div class="progress-bar-wrapper">
+              <div class="progress-bar" id="nup-progress-bar" style="width: 0%;"></div>
+            </div>
+            <span class="progress-percent" id="nup-progress-percent">0%</span>
+          </div>
+        </div>
+
+        <!-- Success Overlay -->
+        <div id="nup-success" class="success-overlay" style="display: none;">
+          <div class="success-content">
+            <div class="success-icon-wrapper" style="background: linear-gradient(135deg, rgba(6,182,212,0.15), rgba(6,182,212,0.05));">
+              <i class="ti ti-circle-check" style="color: #06b6d4;"></i>
+            </div>
+            <h3>N-Up PDF Created!</h3>
+            <p>Your multi-page layout is ready to download.</p>
+
+            <div class="download-details glass-panel">
+              <div class="download-info-row">
+                <span class="label"><i class="ti ti-file"></i> File:</span>
+                <span class="value" id="nup-download-name">output.pdf</span>
+              </div>
+              <div class="download-info-row">
+                <span class="label"><i class="ti ti-database"></i> Size:</span>
+                <span class="value" id="nup-download-size">0 KB</span>
+              </div>
+              <div class="download-info-row">
+                <span class="label"><i class="ti ti-files"></i> Sheets:</span>
+                <span class="value" id="nup-result-pages">0</span>
+              </div>
+              <div class="download-info-row">
+                <span class="label"><i class="ti ti-layout-grid"></i> Layout:</span>
+                <span class="value" id="nup-result-layout">4/sheet</span>
+              </div>
+            </div>
+
+            <div class="success-actions">
+              <button class="btn btn-primary btn-lg" style="background: linear-gradient(135deg, #06b6d4, #0891b2);" id="nup-download-btn">
+                <i class="ti ti-download"></i> Download PDF
+              </button>
+              <button class="btn btn-secondary btn-lg" id="nup-reset-btn">
+                <i class="ti ti-refresh"></i> Convert Another
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="app-footer glass-panel">
+    <div class="security-badge">
+      <i class="ti ti-shield-lock"></i>
+      <span>100% Client Side Processing. Your files never leave your device.</span>
+    </div>
+    <p class="copyright">Developed by Novatix Solution &bull; &copy; 2026 NovaTool. Local, private, secure.</p>
+  </footer>
+
+  <!-- Shared Theme Manager -->
+  <script src="../theme.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
